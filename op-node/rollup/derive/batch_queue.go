@@ -323,10 +323,16 @@ batchLoop:
 	// batch to ensure that we at least have one batch per epoch.
 	if nextMilliTimestamp < nextEpoch.MillisecondTimestamp() || firstOfEpoch {
 		bq.log.Info("Generating next batch", "epoch", epoch, "timestamp", nextMilliTimestamp)
+		nextL2, err := bq.l2.L2BlockRefByNumber(ctx, parent.Number+1)
+		if err != nil {
+			bq.log.Error("Get L2BlockRefByNumber error", "error", err)
+			return nil, io.EOF
+		}
+
 		return &SingularBatch{
 			ParentHash:   parent.Hash,
-			EpochNum:     rollup.Epoch(epoch.Number),
-			EpochHash:    epoch.Hash,
+			EpochNum:     rollup.Epoch(nextL2.L1Origin.Number),
+			EpochHash:    nextL2.L1Origin.Hash,
 			Timestamp:    nextMilliTimestamp,
 			Transactions: nil,
 		}, nil
